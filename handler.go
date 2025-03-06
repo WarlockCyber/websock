@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 func startServer() error {
@@ -49,24 +48,17 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			ch = pr[1]
 		}
 	}
-	var mutex sync.Mutex
 
-	mutex.Lock()
 	wcon := newWsConn(ws, rm, ch)
-	clients = append(clients, wcon)
-	mutex.Unlock()
+
+	clients.Add(wcon)
 
 	log.Printf("%s: new connection %s opened", methodName, wcon.toString())
 }
 
 func subscribeUnsubscribeMessage(char string) error {
-	sb := make([]*wsConn, 0)
 	if char != "" {
-		for _, c := range clients {
-			if c.char == char {
-				sb = append(sb, c)
-			}
-		}
+		sb := clients.byChar(char)
 
 		sys := unsubMessage
 		if len(sb) > 1 {

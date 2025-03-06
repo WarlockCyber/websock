@@ -2,8 +2,6 @@ package main
 
 import "time"
 
-var clients []*wsConn
-
 const (
 	portEnvName           = "WS_PORT"
 	readBuferSizeEnvName  = "WS_READ_BUFER_SIZE"

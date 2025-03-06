@@ -125,20 +125,15 @@ func (c *wsConn) initPing() error {
 	return nil
 }
 
+func (c *wsConn) stopPing() {
+	c.tickerDone <- true
+}
+
 func (c *wsConn) onClose(code int, text string) error {
 	const methodName = "connection close"
 
-	c.tickerDone <- true
-
-	var mutex sync.Mutex
-
-	for n, cl := range clients {
-		if cl.uid == c.uid {
-			mutex.Lock()
-			clients = append(clients[:n], clients[n+1:]...)
-			mutex.Unlock()
-		}
-	}
+	c.stopPing()
+	clients.Remove(c.uid.String())
 
 	message := websocket.FormatCloseMessage(code, "")
 
