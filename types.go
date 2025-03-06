@@ -15,6 +15,7 @@ const (
 
 	subMessage   = "subscrbe"
 	unsubMessage = "unsubscrbe"
+	pingMessage  = "ping"
 )
 
 const (

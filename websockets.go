@@ -14,10 +14,12 @@ import (
 var upgrader websocket.Upgrader
 
 type wsConn struct {
-	ws   *websocket.Conn
-	char string
-	room string
-	uid  uuid.UUID
+	ws         *websocket.Conn
+	char       string
+	room       string
+	uid        uuid.UUID
+	pingTicker *time.Ticker
+	tickerDone chan bool
 }
 
 func initWS() {
@@ -39,6 +41,28 @@ func newWsConn(c *websocket.Conn, room, char string) *wsConn {
 		room: room,
 		uid:  uuid.New(),
 	}
+
+	pingTicker := time.NewTicker(1 * time.Minute)
+	done := make(chan bool)
+
+	conn.pingTicker = pingTicker
+	conn.tickerDone = done
+
+	pingMess := new(sysMessage)
+	pingMess.System = pingMessage
+	pm, _ := json.Marshal(pingMess)
+
+	go func() {
+		for {
+			select {
+			case <-conn.tickerDone:
+				return
+			case t := <-conn.pingTicker.C:
+				log.Printf("Ping at %s for connection %s", t.String(), conn.uid.String())
+				conn.send(pm)
+			}
+		}
+	}()
 
 	c.SetCloseHandler(conn.onClose)
 
@@ -108,6 +132,9 @@ func (c *wsConn) onClose(code int, text string) error {
 
 	message := websocket.FormatCloseMessage(code, "")
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
+
+	c.tickerDone <- true
+
 	return nil
 }
 
