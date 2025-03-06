@@ -14,6 +14,7 @@ import (
 var upgrader websocket.Upgrader
 
 type wsConn struct {
+	mu         sync.Mutex
 	ws         *websocket.Conn
 	char       string
 	room       string
@@ -36,33 +37,13 @@ func initWS() {
 
 func newWsConn(c *websocket.Conn, room, char string) *wsConn {
 	conn := &wsConn{
-		ws:   c,
-		char: char,
-		room: room,
-		uid:  uuid.New(),
+		ws:         c,
+		char:       char,
+		room:       room,
+		uid:        uuid.New(),
+		pingTicker: time.NewTicker(time.Duration(cfg.PingTimeout) * time.Second),
+		tickerDone: make(chan bool),
 	}
-
-	pingTicker := time.NewTicker(1 * time.Minute)
-	done := make(chan bool)
-
-	conn.pingTicker = pingTicker
-	conn.tickerDone = done
-
-	pingMess := new(sysMessage)
-	pingMess.System = pingMessage
-	pm, _ := json.Marshal(pingMess)
-
-	go func() {
-		for {
-			select {
-			case <-conn.tickerDone:
-				return
-			case t := <-conn.pingTicker.C:
-				log.Printf("Ping at %s for connection %s", t.String(), conn.uid.String())
-				conn.send(pm)
-			}
-		}
-	}()
 
 	c.SetCloseHandler(conn.onClose)
 
@@ -75,6 +56,12 @@ func (c *wsConn) handle() {
 	const methodName = "handle connection"
 
 	defer c.ws.Close()
+
+	err := c.initPing()
+	if err != nil {
+		log.Printf("%s: init ping getting error %s", methodName, err.Error())
+		return
+	}
 
 	// цикл обработки сообщений
 	for {
@@ -115,10 +102,33 @@ func (c *wsConn) handle() {
 	}
 }
 
+func (c *wsConn) initPing() error {
+	pingMess := &sysMessage{
+		System: pingMessage,
+	}
+	pm, err := json.Marshal(pingMess)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case <-c.tickerDone:
+				return
+			case _ = <-c.pingTicker.C:
+				c.send(pm)
+			}
+		}
+	}()
+
+	return nil
+}
+
 func (c *wsConn) onClose(code int, text string) error {
 	const methodName = "connection close"
 
-	log.Printf("%s: connection %s closed", methodName, c.toString())
+	c.tickerDone <- true
 
 	var mutex sync.Mutex
 
@@ -131,14 +141,21 @@ func (c *wsConn) onClose(code int, text string) error {
 	}
 
 	message := websocket.FormatCloseMessage(code, "")
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
 
-	c.tickerDone <- true
+	log.Printf("%s: connection %s closed", methodName, c.toString())
 
 	return nil
 }
 
 func (c *wsConn) send(m []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	return c.ws.WriteMessage(websocket.TextMessage, m)
 }
 

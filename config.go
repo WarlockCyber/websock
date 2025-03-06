@@ -11,6 +11,7 @@ type config struct {
 	Port           int64
 	ReadBuferSize  int64
 	WriteBuferSize int64
+	PingTimeout    int64
 	Crt            string
 	Key            string
 }
@@ -33,6 +34,7 @@ func initConfig() error {
 
 	readBS := defReadSize
 	writeBS := defWriteSize
+	pingTimeout := defPingTimeout
 
 	if os.Getenv(readBuferSizeEnvName) != "" {
 		r, err := strconv.ParseInt(os.Getenv(readBuferSizeEnvName), 10, 64)
@@ -52,10 +54,20 @@ func initConfig() error {
 		writeBS = int(r)
 	}
 
+	if os.Getenv(pingTimeoutEnvName) != "" {
+		r, err := strconv.ParseInt(os.Getenv(pingTimeoutEnvName), 10, 64)
+		if err != nil {
+			return err
+		}
+
+		pingTimeout = int(r)
+	}
+
 	cfg = &config{
 		Port:           port,
 		WriteBuferSize: int64(writeBS),
 		ReadBuferSize:  int64(readBS),
+		PingTimeout:    int64(pingTimeout),
 		Crt:            os.Getenv(crtEnvName),
 		Key:            os.Getenv(keyEnvName),
 	}
