@@ -18,7 +18,7 @@ func startServer() error {
 	var err error
 
 	if cfg.Crt != "" && cfg.Key != "" {
-		err = http.ListenAndServeTLS(":443", cfg.Crt, cfg.Key, nil)
+		err = http.ListenAndServeTLS(":"+strPort, cfg.Crt, cfg.Key, nil)
 	} else {
 		err = http.ListenAndServe(":"+strPort, nil)
 	}
