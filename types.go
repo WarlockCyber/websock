@@ -28,6 +28,5 @@ type sysMessage struct {
 }
 
 type clientMessage struct {
-	Char    string `json:"char"`
-	Message string `json:"message"`
+	Char string `json:"char"`
 }

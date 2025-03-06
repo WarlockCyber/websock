@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -77,8 +78,13 @@ func subscribeUnsubscribeMessage(char string) error {
 			On:     char,
 		}
 
+		ms, err := json.Marshal(mess)
+		if err != nil {
+			return err
+		}
+
 		for _, c := range sb {
-			err := c.send(mess)
+			err := c.send(ms)
 			if err != nil {
 				return err
 			}

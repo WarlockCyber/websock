@@ -65,13 +65,12 @@ func (c *wsConn) handle() {
 		err = json.Unmarshal([]byte(message), ms)
 		if err != nil {
 			log.Printf("%s: unmarshal message getting error %s", methodName, err.Error())
-			continue
 		}
 
 		if ms.Char != "" {
 			for _, cl := range clients {
 				if c.uid != cl.uid {
-					err := cl.send(ms)
+					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
 						continue
@@ -81,7 +80,7 @@ func (c *wsConn) handle() {
 		} else {
 			for _, cl := range clients {
 				if cl.room == c.room {
-					err := cl.send(ms)
+					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
 						continue
@@ -112,8 +111,8 @@ func (c *wsConn) onClose(code int, text string) error {
 	return nil
 }
 
-func (c *wsConn) send(m interface{}) error {
-	return c.ws.WriteJSON(m)
+func (c *wsConn) send(m []byte) error {
+	return c.ws.WriteMessage(websocket.TextMessage, m)
 }
 
 func (c *wsConn) toString() string {
