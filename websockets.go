@@ -53,7 +53,9 @@ func newWsConn(c *websocket.Conn, room, char string) *wsConn {
 func (c *wsConn) handle() {
 	const methodName = "handle connection"
 
-	defer c.ws.Close()
+	defer func() {
+		c.close()
+	}()
 
 	err := c.initPing()
 	if err != nil {
@@ -62,7 +64,7 @@ func (c *wsConn) handle() {
 	}
 
 	if err := c.subscribeUnsubscribeMessage(); err != nil {
-		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
+		log.Printf("%s: subscribe getting error %s", methodName, err.Error())
 		return
 	}
 
@@ -83,7 +85,7 @@ func (c *wsConn) handle() {
 
 		if ms.Char != "" {
 			for _, cl := range clients.clients {
-				if c.uid != cl.uid {
+				if c.uid != cl.uid && ms.Char == cl.char && cl.char != "" {
 					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
@@ -120,9 +122,7 @@ func (c *wsConn) initPing() error {
 			case <-c.tickerDone:
 				return
 			case _ = <-c.pingTicker.C:
-				if err := c.send(pm); err != nil {
-					c.ws.Close()
-				}
+				c.send(pm)
 			}
 		}
 	}()
@@ -134,7 +134,7 @@ func (c *wsConn) stopPing() {
 	c.tickerDone <- true
 }
 
-func (c *wsConn) onClose(code int, text string) error {
+func (c *wsConn) close() {
 	const methodName = "connection close"
 
 	c.stopPing()
@@ -144,7 +144,7 @@ func (c *wsConn) onClose(code int, text string) error {
 		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
 	}
 
-	message := websocket.FormatCloseMessage(code, "")
+	message := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -152,6 +152,12 @@ func (c *wsConn) onClose(code int, text string) error {
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
 
 	log.Printf("disconnect | %s", c.toString())
+
+	c = nil
+}
+
+func (c *wsConn) onClose(code int, text string) error {
+	c.close()
 
 	return nil
 }
