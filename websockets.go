@@ -61,6 +61,11 @@ func (c *wsConn) handle() {
 		return
 	}
 
+	if err := c.subscribeUnsubscribeMessage(); err != nil {
+		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
+		return
+	}
+
 	// цикл обработки сообщений
 	for {
 		_, message, err := c.ws.ReadMessage()
@@ -133,6 +138,10 @@ func (c *wsConn) onClose(code int, text string) error {
 	c.stopPing()
 	clients.Remove(c.uid.String())
 
+	if err := c.subscribeUnsubscribeMessage(); err != nil {
+		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
+	}
+
 	message := websocket.FormatCloseMessage(code, "")
 
 	c.mu.Lock()
@@ -141,6 +150,36 @@ func (c *wsConn) onClose(code int, text string) error {
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
 
 	log.Printf("disconnect | %s", c.toString())
+
+	return nil
+}
+
+func (c *wsConn) subscribeUnsubscribeMessage() error {
+	if c.char != "" {
+		sb := clients.byChar(c.char)
+
+		sys := unsubMessage
+		if len(sb) > 1 {
+			sys = subMessage
+		}
+
+		mess := &sysMessage{
+			System: sys,
+			On:     c.char,
+		}
+
+		ms, err := json.Marshal(mess)
+		if err != nil {
+			return err
+		}
+
+		for _, c := range sb {
+			err := c.send(ms)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -54,34 +53,4 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients.Add(wcon)
 
 	log.Printf("connect   | %s",  wcon.toString())
-}
-
-func subscribeUnsubscribeMessage(char string) error {
-	if char != "" {
-		sb := clients.byChar(char)
-
-		sys := unsubMessage
-		if len(sb) > 1 {
-			sys = subMessage
-		}
-
-		mess := &sysMessage{
-			System: sys,
-			On:     char,
-		}
-
-		ms, err := json.Marshal(mess)
-		if err != nil {
-			return err
-		}
-
-		for _, c := range sb {
-			err := c.send(ms)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
