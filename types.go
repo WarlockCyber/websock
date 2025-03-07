@@ -12,8 +12,8 @@ const (
 
 	writeWait = time.Second
 
-	subMessage   = "subscrbe"
-	unsubMessage = "unsubscrbe"
+	subMessage   = "subscribe"
+	unsubMessage = "unsubscribe"
 	pingMessage  = "ping"
 )
 
