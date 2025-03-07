@@ -31,8 +31,6 @@ func initWS() {
 			return true
 		},
 	}
-
-	clients = make([]*wsConn, 0)
 }
 
 func newWsConn(c *websocket.Conn, room, char string) *wsConn {
@@ -79,7 +77,7 @@ func (c *wsConn) handle() {
 		}
 
 		if ms.Char != "" {
-			for _, cl := range clients {
+			for _, cl := range clients.clients {
 				if c.uid != cl.uid {
 					err := cl.send(message)
 					if err != nil {
@@ -89,8 +87,8 @@ func (c *wsConn) handle() {
 				}
 			}
 		} else {
-			for _, cl := range clients {
-				if cl.room == c.room {
+			for _, cl := range clients.clients {
+				if cl.room == c.room && c.uid != cl.uid {
 					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
@@ -150,7 +148,6 @@ func (c *wsConn) onClose(code int, text string) error {
 func (c *wsConn) send(m []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
 	return c.ws.WriteMessage(websocket.TextMessage, m)
 }
 

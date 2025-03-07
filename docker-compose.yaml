@@ -1,0 +1,25 @@
+version: '3.5'
+
+x-container: &container
+  restart: always
+
+services:
+### Service Container ##########################
+  websocket:
+    <<: *container
+    image: localhost/websocket:latest
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: app
+    ports:
+      - $WS_PORT:$WS_PORT
+    environment:
+      WS_PORT: ${WS_PORT:-443}
+      WS_READ_BUFER_SIZE: ${WS_READ_BUFER_SIZE:-1024}
+      WS_WRITE_BUFER_SIZE: ${WS_WRITE_BUFER_SIZE:-1024}
+      WS_CRT_FILE: ${WS_CRT_FILE:-}
+      WS_KEY_FILE: ${WS_KEY_FILE:-}
+      WS_PING_TIMEOUT: ${WS_PING_TIMEOUT:-60}
+    volumes:
+      - ./volumes/tls:/tls:ro
