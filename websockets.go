@@ -120,7 +120,9 @@ func (c *wsConn) initPing() error {
 			case <-c.tickerDone:
 				return
 			case _ = <-c.pingTicker.C:
-				c.send(pm)
+				if err := c.send(pm); err != nil {
+					c.ws.Close()
+				}
 			}
 		}
 	}()
