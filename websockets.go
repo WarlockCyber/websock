@@ -135,13 +135,12 @@ func (c *wsConn) stopPing() {
 func (c *wsConn) onClose(code int, text string) error {
 	const methodName = "connection close"
 
-	if err := c.subscribeUnsubscribeMessage(); err != nil {
-		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
-		return err
-	}
-
 	c.stopPing()
 	clients.Remove(c.uid.String())
+
+	if err := c.subscribeUnsubscribeMessage(); err != nil {
+		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
+	}
 
 	message := websocket.FormatCloseMessage(code, "")
 
