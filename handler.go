@@ -53,7 +53,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	clients.Add(wcon)
 
-	log.Printf("%s: new connection %s opened", methodName, wcon.toString())
+	log.Printf("connect   |", methodName, wcon.toString())
 }
 
 func subscribeUnsubscribeMessage(char string) error {

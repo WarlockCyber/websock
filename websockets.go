@@ -140,7 +140,7 @@ func (c *wsConn) onClose(code int, text string) error {
 
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
 
-	log.Printf("%s: connection %s closed", methodName, c.toString())
+	log.Printf("disconnect |", methodName, c.toString())
 
 	return nil
 }
@@ -152,5 +152,5 @@ func (c *wsConn) send(m []byte) error {
 }
 
 func (c *wsConn) toString() string {
-	return "uuid: " + c.uid.String() + ", room " + c.room + ", char " + c.char
+	return " room " + c.room + "| char " + c.char
 }
