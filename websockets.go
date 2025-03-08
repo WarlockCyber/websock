@@ -199,5 +199,5 @@ func (c *wsConn) send(m []byte) error {
 }
 
 func (c *wsConn) toString() string {
-	return "room " + c.room + " | char " + c.char
+	return c.length+" sessions | "+countUsers()+" users | room " + c.room + " | char " + c.char
 }
