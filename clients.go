@@ -49,3 +49,10 @@ func (c *clientsSlice) byChar(char string) []*wsConn {
 
 	return sb
 }
+
+func (c *clientsSlice) len() int {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
+	return len(c.clients)
+}

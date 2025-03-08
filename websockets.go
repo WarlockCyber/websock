@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -199,5 +201,8 @@ func (c *wsConn) send(m []byte) error {
 }
 
 func (c *wsConn) toString() string {
-	return c.length+" sessions | "+countUsers()+" users | room " + c.room + " | char " + c.char
+
+	ln := unsafe.Sizeof(*c)
+
+	return fmt.Sprintf("%d session | %d users | room %s | char %s", ln, clients.len(), c.room, c.char)
 }
