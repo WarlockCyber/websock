@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"sync"
 	"time"
 	"unsafe"
@@ -17,17 +16,14 @@ import (
 var upgrader websocket.Upgrader
 
 type wsConn struct {
-	mu          sync.Mutex
-	ws          *websocket.Conn
-	char        string
-	isValidChar bool
-	room        string
-	uid         uuid.UUID
-	pingTicker  *time.Ticker
-	tickerDone  chan bool
+	mu         sync.Mutex
+	ws         *websocket.Conn
+	char       string
+	room       string
+	uid        uuid.UUID
+	pingTicker *time.Ticker
+	tickerDone chan bool
 }
-
-var md5test = regexp.MustCompile("^[a-f0-9]{32}$")
 
 func initWS() {
 	upgrader = websocket.Upgrader{
@@ -41,13 +37,12 @@ func initWS() {
 
 func newWsConn(c *websocket.Conn, room, char string) *wsConn {
 	conn := &wsConn{
-		ws:          c,
-		char:        char,
-		isValidChar: md5test.Match([]byte(char)),
-		room:        room,
-		uid:         uuid.New(),
-		pingTicker:  time.NewTicker(time.Duration(cfg.PingTimeout) * time.Second),
-		tickerDone:  make(chan bool),
+		ws:         c,
+		char:       char,
+		room:       room,
+		uid:        uuid.New(),
+		pingTicker: time.NewTicker(time.Duration(cfg.PingTimeout) * time.Second),
+		tickerDone: make(chan bool),
 	}
 
 	c.SetCloseHandler(conn.onClose)
@@ -92,7 +87,7 @@ func (c *wsConn) handle() {
 
 		if ms.Char != "" {
 			for _, cl := range clients.clients {
-				if c.uid != cl.uid && ms.Char == cl.char && cl.char != "" && cl.isValidChar {
+				if c.uid != cl.uid && ms.Char == cl.char && cl.char != "" {
 					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
@@ -102,7 +97,7 @@ func (c *wsConn) handle() {
 			}
 		} else {
 			for _, cl := range clients.clients {
-				if cl.room == c.room && c.uid != cl.uid && cl.room != "" {
+				if cl.room == c.room && c.uid != cl.uid {
 					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())

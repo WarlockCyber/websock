@@ -43,11 +43,6 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	var ch, rm string
 	if len(pr) > 0 {
 		rm = pr[0]
-		v, err := strconv.ParseInt(rm, 10, 64)
-		if err != nil || v == 0 {
-			rm = ""
-		}
-
 		if len(pr) > 1 {
 			ch = pr[1]
 		}
@@ -57,5 +52,5 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	clients.Add(wcon)
 
-	log.Printf("connect    | %s", wcon.toString())
+	log.Printf("connect    | %s",  wcon.toString())
 }
