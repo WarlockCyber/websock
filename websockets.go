@@ -51,8 +51,6 @@ func newWsConn(c *websocket.Conn, room, char string) *wsConn {
 		tickerDone:  make(chan bool),
 	}
 
-	c.SetCloseHandler(conn.onClose)
-
 	go conn.handle()
 
 	return conn
@@ -133,7 +131,7 @@ func (c *wsConn) initPing() error {
 			select {
 			case <-c.tickerDone:
 				return
-			case _ = <-c.pingTicker.C:
+			case <-c.pingTicker.C:
 				c.send(pm)
 			}
 		}
@@ -168,12 +166,6 @@ func (c *wsConn) close() {
 	log.Printf("disconnect | %s", c.toString())
 
 	c = nil
-}
-
-func (c *wsConn) onClose(code int, text string) error {
-	c.close()
-
-	return nil
 }
 
 func (c *wsConn) subscribeUnsubscribeMessage() error {
