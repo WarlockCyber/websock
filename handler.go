@@ -64,7 +64,7 @@ func startServer() error {
 	*/
 	log.Println("http server started on " + strPort)
 
-	http.HandleFunc("/hello", handleConnections)
+	http.HandleFunc("/", handleConnections)
 	if cfg.Crt != "" && cfg.Key != "" {
 		if err := http.ListenAndServeTLS(":"+strPort, cfg.Crt, cfg.Key, nil); err != nil {
 			log.Fatal(err)
