@@ -29,14 +29,16 @@ func startServer() error {
 		}
 	}
 
-	sockR := http.NewServeMux()
-	sockR.HandleFunc("/", handleConnections)
+	/*
+		sockR := http.NewServeMux()
+		sockR.HandleFunc("/", handleConnections)
 
-	socServer := &http.Server{
-		Addr:      ":" + strPort,
-		TLSConfig: tlsConf,
-		Handler:   sockR,
-	}
+		socServer := &http.Server{
+			Addr:      ":" + strPort,
+			TLSConfig: tlsConf,
+			Handler:   sockR,
+		}
+	*/
 
 	r := http.NewServeMux()
 	// Регистрация pprof-обработчиков
@@ -53,7 +55,7 @@ func startServer() error {
 	}
 
 	defer func() {
-		socServer.Close()
+		//socServer.Close()
 		pprofServer.Close()
 	}()
 
@@ -66,8 +68,15 @@ func startServer() error {
 	}()
 
 	go func() {
-		if err := socServer.ListenAndServe(); err != nil {
-			errChan <- err
+		http.HandleFunc("/hello", handleConnections)
+		if cfg.Crt != "" && cfg.Key != "" {
+			if err := http.ListenAndServeTLS(":"+strPort, cfg.Crt, cfg.Key, nil); err != nil {
+				errChan <- err
+			}
+		} else {
+			if err := http.ListenAndServe(":"+strPort, nil); err != nil {
+				errChan <- err
+			}
 		}
 	}()
 
