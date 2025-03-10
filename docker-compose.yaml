@@ -14,8 +14,10 @@ services:
       target: app
     ports:
       - $WS_PORT:$WS_PORT
+      - $WS_PPROF_PORT:$WS_PPROF_PORT
     environment:
       WS_PORT: ${WS_PORT:-443}
+      WS_PPROF_PORT: ${WS_PPROF_PORT:-9090}
       WS_READ_BUFER_SIZE: ${WS_READ_BUFER_SIZE:-1024}
       WS_WRITE_BUFER_SIZE: ${WS_WRITE_BUFER_SIZE:-1024}
       WS_CRT_FILE: ${WS_CRT_FILE:-}

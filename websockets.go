@@ -8,13 +8,14 @@ import (
 	"regexp"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
 var upgrader websocket.Upgrader
+
+const logLen = 50
 
 type wsConn struct {
 	mu          sync.Mutex
@@ -83,6 +84,8 @@ func (c *wsConn) handle() {
 			break
 		}
 
+		log.Printf("recived | %s | %s", substr(string(message), 0, logLen), c.toString())
+
 		ms := new(clientMessage)
 
 		err = json.Unmarshal([]byte(message), ms)
@@ -93,6 +96,7 @@ func (c *wsConn) handle() {
 		if ms.Char != "" {
 			for _, cl := range clients.clients {
 				if c.uid != cl.uid && ms.Char == cl.char && cl.char != "" && cl.isValidChar {
+					log.Printf("sending to char %s| %s | %s", cl.char, substr(string(message), 0, logLen), cl.toString())
 					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
@@ -103,6 +107,7 @@ func (c *wsConn) handle() {
 		} else {
 			for _, cl := range clients.clients {
 				if cl.room == c.room && c.uid != cl.uid && cl.room != "" {
+					log.Printf("sending to room %s| %s | %s", cl.room, substr(string(message), 0, logLen), cl.toString())
 					err := cl.send(message)
 					if err != nil {
 						log.Printf("%s: send message getting error %s", methodName, err.Error())
@@ -158,6 +163,8 @@ func (c *wsConn) close() {
 
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
 
+	c.ws.Close()
+
 	log.Printf("disconnect | %s", c.toString())
 
 	c = nil
@@ -206,8 +213,19 @@ func (c *wsConn) send(m []byte) error {
 }
 
 func (c *wsConn) toString() string {
+	return fmt.Sprintf("%d session | %d users | room %s | char %s", clients.memory(), clients.len(), c.room, c.char)
+}
 
-	ln := unsafe.Sizeof(*c)
+func substr(input string, start int, length int) string {
+	asRunes := []rune(input)
 
-	return fmt.Sprintf("%d session | %d users | room %s | char %s", ln, clients.len(), c.room, c.char)
+	if start >= len(asRunes) {
+		return ""
+	}
+
+	if start+length > len(asRunes) {
+		length = len(asRunes) - start
+	}
+
+	return string(asRunes[start : start+length])
 }

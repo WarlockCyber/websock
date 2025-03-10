@@ -2,9 +2,11 @@ package main
 
 import (
 	"sync"
+	"unsafe"
 )
 
 type clientsSlice struct {
+	mu      sync.Mutex
 	clients []*wsConn
 }
 
@@ -21,20 +23,18 @@ func newClientsSlice() *clientsSlice {
 }
 
 func (c *clientsSlice) Add(w *wsConn) {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.clients = append(c.clients, w)
 }
 
 func (c *clientsSlice) Remove(uuid string) {
-	var mu sync.Mutex
-
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	for n, cl := range c.clients {
 		if cl.uid.String() == uuid {
-			mu.Lock()
 			c.clients = append(c.clients[:n], c.clients[n+1:]...)
-			mu.Unlock()
+			break
 		}
 	}
 }
@@ -55,4 +55,14 @@ func (c *clientsSlice) len() int {
 	mu.Lock()
 	defer mu.Unlock()
 	return len(c.clients)
+}
+
+func (c *clientsSlice) memory() int {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
+
+	ln := unsafe.Sizeof(c.clients)
+
+	return int(ln)
 }
