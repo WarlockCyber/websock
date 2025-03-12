@@ -15,6 +15,8 @@ import (
 
 var upgrader websocket.Upgrader
 
+var total float64
+
 const logLen = 50
 
 type wsConn struct {
@@ -58,6 +60,7 @@ func newWsConn(c *websocket.Conn, room, char string) *wsConn {
 
 func (c *wsConn) handle() {
 	const methodName = "handle connection"
+	var mu sync.Mutex
 
 	defer func() {
 		c.close()
@@ -82,7 +85,12 @@ func (c *wsConn) handle() {
 			break
 		}
 
-		log.Printf("recived | %s | %s", substr(string(message), 0, logLen), c.toString())
+		msLen := float64(len(message) / 1024 / 1024)
+		mu.Lock()
+		total += float64(msLen)
+		mu.Unlock()
+
+		log.Printf("recived | trafic %.1f Mb | total %.1f Mb| %s | %s", msLen, total, substr(string(message), 0, logLen), c.toString())
 
 		ms := new(clientMessage)
 
@@ -205,7 +213,7 @@ func (c *wsConn) send(m []byte) error {
 }
 
 func (c *wsConn) toString() string {
-	return fmt.Sprintf("%d session | %d users | room %s | char %s", clients.memory(), clients.len(), c.room, c.char)
+	return fmt.Sprintf("%d sessions | unique rooms %d | room %s | char %s", clients.len(), clients.uniqueRoom(), c.room, c.char)
 }
 
 func substr(input string, start int, length int) string {

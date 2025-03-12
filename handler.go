@@ -14,7 +14,6 @@ import (
 
 func startServer() error {
 	strPort := strconv.FormatInt(cfg.Port, 10)
-	strPPPort := strconv.FormatInt(cfg.PprofPort, 10)
 
 	sockR := http.NewServeMux()
 	sockR.HandleFunc("/", handleConnections)
@@ -24,36 +23,45 @@ func startServer() error {
 		Handler: sockR,
 	}
 
-	r := http.NewServeMux()
-	// Регистрация pprof-обработчиков
-	r.HandleFunc("/debug/pprof/", pprof.Index)
-	r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	errChan := make(chan error)
 
-	pprofServer := &http.Server{
-		Addr:    ":" + strPPPort,
-		Handler: r,
+	if cfg.PProfEnabled {
+		strPPPort := strconv.FormatInt(cfg.PprofPort, 10)
+
+		r := http.NewServeMux()
+		// Регистрация pprof-обработчиков
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		pprofServer := &http.Server{
+			Addr:    ":" + strPPPort,
+			Handler: r,
+		}
+
+		defer func() {
+			pprofServer.Close()
+		}()
+
+		go func() {
+			if cfg.Crt != "" && cfg.Key != "" {
+				if err := pprofServer.ListenAndServeTLS(cfg.Crt, cfg.Key); err != nil {
+					errChan <- err
+				}
+			} else {
+				if err := pprofServer.ListenAndServe(); err != nil {
+					errChan <- err
+				}
+			}
+		}()
+
+		log.Println("pprof http server started on " + strPPPort)
 	}
 
 	defer func() {
 		socServer.Close()
-		pprofServer.Close()
-	}()
-
-	errChan := make(chan error)
-
-	go func() {
-		if cfg.Crt != "" && cfg.Key != "" {
-			if err := pprofServer.ListenAndServeTLS(cfg.Crt, cfg.Key); err != nil {
-				errChan <- err
-			}
-		} else {
-			if err := pprofServer.ListenAndServe(); err != nil {
-				errChan <- err
-			}
-		}
 	}()
 
 	go func() {
@@ -69,7 +77,6 @@ func startServer() error {
 	}()
 
 	log.Println("http server started on " + strPort)
-	log.Println("pprof http server started on " + strPPPort)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

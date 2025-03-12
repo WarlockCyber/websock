@@ -10,6 +10,7 @@ const (
 	crtEnvName            = "WS_CRT_FILE"
 	keyEnvName            = "WS_KEY_FILE"
 	pingTimeoutEnvName    = "WS_PING_TIMEOUT"
+	pprofEnabledEnvName   = "WS_PPROF_ENABLED"
 
 	writeWait = time.Second
 

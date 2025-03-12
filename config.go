@@ -15,6 +15,7 @@ type config struct {
 	PingTimeout    int64
 	Crt            string
 	Key            string
+	PProfEnabled   bool
 }
 
 var cfg *config
@@ -41,6 +42,7 @@ func initConfig() error {
 	readBS := defReadSize
 	writeBS := defWriteSize
 	pingTimeout := defPingTimeout
+	pprofEnabled := false
 
 	if os.Getenv(readBuferSizeEnvName) != "" {
 		r, err := strconv.ParseInt(os.Getenv(readBuferSizeEnvName), 10, 64)
@@ -69,6 +71,17 @@ func initConfig() error {
 		pingTimeout = int(r)
 	}
 
+	if os.Getenv(pprofEnabledEnvName) != "" {
+		r, err := strconv.ParseInt(os.Getenv(pprofEnabledEnvName), 10, 64)
+		if err != nil {
+			return err
+		}
+
+		if r == 1 {
+			pprofEnabled = true
+		}
+	}
+
 	cfg = &config{
 		Port:           port,
 		PprofPort:      pprofPort,
@@ -77,6 +90,7 @@ func initConfig() error {
 		PingTimeout:    int64(pingTimeout),
 		Crt:            os.Getenv(crtEnvName),
 		Key:            os.Getenv(keyEnvName),
+		PProfEnabled:   pprofEnabled,
 	}
 
 	return nil

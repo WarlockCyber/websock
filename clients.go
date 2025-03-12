@@ -66,3 +66,17 @@ func (c *clientsSlice) memory() int {
 
 	return int(ln)
 }
+
+func (c *clientsSlice) uniqueRoom() int {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
+
+	r := make(map[string]bool)
+
+	for _, v := range c.clients {
+		r[v.room] = true
+	}
+
+	return len(r)
+}

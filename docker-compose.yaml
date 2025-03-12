@@ -23,5 +23,6 @@ services:
       WS_CRT_FILE: ${WS_CRT_FILE:-}
       WS_KEY_FILE: ${WS_KEY_FILE:-}
       WS_PING_TIMEOUT: ${WS_PING_TIMEOUT:-60}
+      WS_PPROF_ENABLED: ${WS_PPROF_ENABLED:-0}
     volumes:
       - ./volumes/tls:/tls:ro
