@@ -85,7 +85,7 @@ func (c *wsConn) handle() {
 			break
 		}
 
-		msLen := float64(len(message) / 1024 / 1024)
+		msLen := float64(float64(len(message)) / 1024 / 1024)
 		mu.Lock()
 		total += float64(msLen)
 		mu.Unlock()
