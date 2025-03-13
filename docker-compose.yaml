@@ -15,7 +15,9 @@ services:
     ports:
       - $WS_PORT:$WS_PORT
       - $WS_PPROF_PORT:$WS_PPROF_PORT
+      - $WS_API_PORT:$WS_API_PORT
     environment:
+      WS_API_PORT: ${WS_API_PORT:-80}
       WS_PORT: ${WS_PORT:-443}
       WS_PPROF_PORT: ${WS_PPROF_PORT:-9090}
       WS_READ_BUFER_SIZE: ${WS_READ_BUFER_SIZE:-1024}

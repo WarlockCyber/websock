@@ -28,6 +28,20 @@ func (c *clientsSlice) Add(w *wsConn) {
 	c.clients = append(c.clients, w)
 }
 
+func (c *clientsSlice) Send(char string, msg string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	chr := c.byChar(char)
+	for _, ch := range chr {
+		if err := ch.send([]byte(msg)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (c *clientsSlice) Remove(uuid string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

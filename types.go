@@ -5,6 +5,7 @@ import "time"
 const (
 	portEnvName           = "WS_PORT"
 	pprofPortEnvName      = "WS_PPROF_PORT"
+	apiPortEnvName        = "WS_API_PORT"
 	readBuferSizeEnvName  = "WS_READ_BUFER_SIZE"
 	writeBuferSizeEnvName = "WS_WRITE_BUFER_SIZE"
 	crtEnvName            = "WS_CRT_FILE"
@@ -17,6 +18,9 @@ const (
 	subMessage   = "subscribe"
 	unsubMessage = "unsubscribe"
 	pingMessage  = "ping"
+
+	userIDParam = "user_id"
+	dataParam   = "data"
 )
 
 const (

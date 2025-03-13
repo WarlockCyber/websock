@@ -10,6 +10,7 @@ import (
 type config struct {
 	Port           int64
 	PprofPort      int64
+	APIPort        int64
 	ReadBuferSize  int64
 	WriteBuferSize int64
 	PingTimeout    int64
@@ -35,6 +36,11 @@ func initConfig() error {
 	}
 
 	pprofPort, err := strconv.ParseInt(os.Getenv(pprofPortEnvName), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	apiPort, err := strconv.ParseInt(os.Getenv(apiPortEnvName), 10, 64)
 	if err != nil {
 		return err
 	}
@@ -85,6 +91,7 @@ func initConfig() error {
 	cfg = &config{
 		Port:           port,
 		PprofPort:      pprofPort,
+		APIPort:        apiPort,
 		WriteBuferSize: int64(writeBS),
 		ReadBuferSize:  int64(readBS),
 		PingTimeout:    int64(pingTimeout),

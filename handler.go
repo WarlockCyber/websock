@@ -14,13 +14,20 @@ import (
 
 func startServer() error {
 	strPort := strconv.FormatInt(cfg.Port, 10)
+	strApiPort := strconv.FormatInt(cfg.APIPort, 10)
 
 	sockR := http.NewServeMux()
 	sockR.HandleFunc("/", handleConnections)
-
 	socServer := &http.Server{
 		Addr:    ":" + strPort,
 		Handler: sockR,
+	}
+
+	apiR := http.NewServeMux()
+	apiR.HandleFunc("/api/send", handleAPISend)
+	apiServer := &http.Server{
+		Addr:    ":" + strApiPort,
+		Handler: apiR,
 	}
 
 	errChan := make(chan error)
@@ -62,6 +69,7 @@ func startServer() error {
 
 	defer func() {
 		socServer.Close()
+		apiServer.Close()
 	}()
 
 	go func() {
@@ -76,7 +84,14 @@ func startServer() error {
 		}
 	}()
 
-	log.Println("http server started on " + strPort)
+	go func() {
+		if err := apiServer.ListenAndServe(); err != nil {
+			errChan <- err
+		}
+	}()
+
+	log.Println("ws server started on " + strPort)
+	log.Println("api server started on " + strApiPort)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -119,4 +134,30 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	clients.Add(wcon)
 
 	log.Printf("connect    | %s", wcon.toString())
+}
+
+func handleAPISend(w http.ResponseWriter, r *http.Request) {
+	const methodName = "handleAPISend"
+
+	qp := r.URL.Query()
+
+	uid := qp.Get(userIDParam)
+	data := qp.Get(dataParam)
+
+	if uid == "" || data == "" {
+		uid = r.PostForm.Get(userIDParam)
+		data = r.PostForm.Get(dataParam)
+	}
+
+	if uid != "" && data != "" {
+		err := clients.Send(uid, data)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+	}
+
+	w.Write([]byte("success"))
+
 }
