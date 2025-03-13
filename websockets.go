@@ -196,9 +196,11 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 		}
 
 		for _, c := range sb {
-			err := c.send(ms)
-			if err != nil {
-				return err
+			if c.isValidChar {
+				err := c.send(ms)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

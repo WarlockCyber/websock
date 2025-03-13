@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"sync"
 	"unsafe"
 )
@@ -28,12 +29,13 @@ func (c *clientsSlice) Add(w *wsConn) {
 	c.clients = append(c.clients, w)
 }
 
-func (c *clientsSlice) Send(char string, msg string) error {
+func (c *clientsSlice) Send(room string, msg string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	chr := c.byChar(char)
+	chr := c.byRoom(room)
 	for _, ch := range chr {
+		log.Printf("API sending message %s | %s", substr(string(msg), 0, logLen), ch.toString())
 		if err := ch.send([]byte(msg)); err != nil {
 			return err
 		}
@@ -57,6 +59,17 @@ func (c *clientsSlice) byChar(char string) []*wsConn {
 	sb := make([]*wsConn, 0)
 	for _, c := range c.clients {
 		if c.char == char {
+			sb = append(sb, c)
+		}
+	}
+
+	return sb
+}
+
+func (c *clientsSlice) byRoom(room string) []*wsConn {
+	sb := make([]*wsConn, 0)
+	for _, c := range c.clients {
+		if c.room == room {
 			sb = append(sb, c)
 		}
 	}
