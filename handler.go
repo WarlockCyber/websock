@@ -141,21 +141,16 @@ func handleAPISend(w http.ResponseWriter, r *http.Request) {
 
 	qp := r.URL.Query()
 
-	uid := qp.Get(userIDParam)
+	room := qp.Get(roomParam)
 	data := qp.Get(dataParam)
 
-	if uid == "" || data == "" {
-		uid = r.PostForm.Get(userIDParam)
+	if room == "" || data == "" {
+		room = r.PostForm.Get(roomParam)
 		data = r.PostForm.Get(dataParam)
 	}
 
-	if uid != "" && data != "" {
-		err := clients.Send(uid, data)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
+	if room != "" && data != "" {
+		clients.SendMessage(room, "", []byte(data))
 	}
 
 	w.Write([]byte("success"))

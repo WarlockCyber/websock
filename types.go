@@ -19,8 +19,8 @@ const (
 	unsubMessage = "unsubscribe"
 	pingMessage  = "ping"
 
-	userIDParam = "user_id"
-	dataParam   = "data"
+	roomParam = "room"
+	dataParam = "data"
 )
 
 const (

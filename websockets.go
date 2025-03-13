@@ -92,36 +92,7 @@ func (c *wsConn) handle() {
 
 		log.Printf("recived | trafic %.1f Mb | total %.1f Mb| %s | %s", msLen, total, substr(string(message), 0, logLen), c.toString())
 
-		ms := new(clientMessage)
-
-		err = json.Unmarshal([]byte(message), ms)
-		if err != nil {
-			log.Printf("%s: unmarshal message getting error %s", methodName, err.Error())
-		}
-
-		if ms.Char != "" {
-			for _, cl := range clients.clients {
-				if c.uid != cl.uid && ms.Char == cl.char && cl.char != "" && cl.isValidChar {
-					log.Printf("sending to char %s| %s | %s", cl.char, substr(string(message), 0, logLen), cl.toString())
-					err := cl.send(message)
-					if err != nil {
-						log.Printf("%s: send message getting error %s", methodName, err.Error())
-						continue
-					}
-				}
-			}
-		} else {
-			for _, cl := range clients.clients {
-				if cl.room == c.room && c.uid != cl.uid && cl.room != "" {
-					log.Printf("sending to room %s| %s | %s", cl.room, substr(string(message), 0, logLen), cl.toString())
-					err := cl.send(message)
-					if err != nil {
-						log.Printf("%s: send message getting error %s", methodName, err.Error())
-						continue
-					}
-				}
-			}
-		}
+		clients.SendMessage(c.room, c.uid.String(), message)
 	}
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"sync"
 	"unsafe"
@@ -29,19 +30,39 @@ func (c *clientsSlice) Add(w *wsConn) {
 	c.clients = append(c.clients, w)
 }
 
-func (c *clientsSlice) Send(room string, msg string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
+	const methodName = "send message"
 
-	chr := c.byRoom(room)
-	for _, ch := range chr {
-		log.Printf("API sending message %s | %s", substr(string(msg), 0, logLen), ch.toString())
-		if err := ch.send([]byte(msg)); err != nil {
-			return err
-		}
+	ms := new(clientMessage)
+
+	err := json.Unmarshal([]byte(message), ms)
+	if err != nil {
+		log.Printf("%s: unmarshal message getting error %s", methodName, err.Error())
 	}
 
-	return nil
+	if ms.Char != "" {
+		for _, cl := range clients.clients {
+			if uid != cl.uid.String() && ms.Char == cl.char && cl.char != "" && cl.isValidChar {
+				log.Printf("sending to char %s| %s | %s", cl.char, substr(string(message), 0, logLen), cl.toString())
+				err := cl.send(message)
+				if err != nil {
+					log.Printf("%s: send message getting error %s", methodName, err.Error())
+					continue
+				}
+			}
+		}
+	} else {
+		for _, cl := range clients.clients {
+			if cl.room == room && uid != cl.uid.String() && cl.room != "" {
+				log.Printf("sending to room %s| %s | %s", cl.room, substr(string(message), 0, logLen), cl.toString())
+				err := cl.send(message)
+				if err != nil {
+					log.Printf("%s: send message getting error %s", methodName, err.Error())
+					continue
+				}
+			}
+		}
+	}
 }
 
 func (c *clientsSlice) Remove(uuid string) {
