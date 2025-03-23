@@ -17,7 +17,7 @@ var upgrader websocket.Upgrader
 
 var total float64
 
-const logLen = 50
+const logLen = 100
 
 type wsConn struct {
 	mu          sync.Mutex
@@ -186,7 +186,7 @@ func (c *wsConn) send(m []byte) error {
 }
 
 func (c *wsConn) toString() string {
-	return fmt.Sprintf("%d sessions | unique rooms %d | room %s | char %s", clients.len(), clients.uniqueRoom(), c.room, c.char)
+	return fmt.Sprintf("%d connects | %d users | room %s | char %s", clients.len(), clients.uniqueRoom(), c.room, c.char)
 }
 
 func substr(input string, start int, length int) string {
