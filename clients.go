@@ -42,7 +42,7 @@ func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 
 	if ms.Char != "" {
 		for _, cl := range clients.clients {
-			if uid != cl.uid.String() && ms.Char == cl.char && cl.char != "" && cl.isValidChar {
+			if uid != cl.uid.String() && ms.Char == cl.char && (cl.char != "" && cl.isValidChar || ms.SelfSend) {
 				log.Printf("sending to char %s| %s | %s", cl.char, substr(string(message), 0, logLen), cl.toString())
 				err := cl.send(message)
 				if err != nil {
@@ -53,7 +53,7 @@ func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 		}
 	} else {
 		for _, cl := range clients.clients {
-			if cl.room == room && uid != cl.uid.String() && cl.room != "" {
+			if cl.room == room && (uid != cl.uid.String() || ms.SelfSend) && cl.room != "" {
 				log.Printf("sending to room %s| %s | %s", cl.room, substr(string(message), 0, logLen), cl.toString())
 				err := cl.send(message)
 				if err != nil {
