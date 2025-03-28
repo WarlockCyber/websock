@@ -37,4 +37,6 @@ type sysMessage struct {
 type clientMessage struct {
 	Char string `json:"char"`
 	SelfSend bool `json:"selfSend"`
+	ForServerOnly bool `json:"forServerOnly"`
+	SubscribeOnUser bool `json:"subscribeOnUser"`
 }
