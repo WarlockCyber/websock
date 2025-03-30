@@ -37,7 +37,8 @@ type sysMessage struct {
 type clientMessage struct {
 	Char string `json:"char"`
 	SelfSend bool `json:"selfSend"`
-	SelfOnly bool `json:"selfOnly"`
+	RoomMessage bool `json:"roomMessage"`
+	ForRoomOwnerOnly bool `json:"forRoomOwnerOnly"`
 	ForServerOnly bool `json:"forServerOnly"`
 	SubscribeOnRoom string `json:"subscribeOnRoom"`
 }

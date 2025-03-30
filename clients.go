@@ -56,7 +56,7 @@ func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 
 	if ms.Char != "" { // Char sen messages
 		for _, cl := range clients.clients {
-			if uid != cl.uid.String() && ms.Char == cl.char && (cl.char != "" && cl.isValidChar || ms.SelfSend || ms.SelfOnly) {
+			if uid != cl.uid.String() && ms.Char == cl.char && (cl.char != "" && cl.isValidChar || ms.SelfSend) {
 				log.Printf("sending to char %s| %s | %s", cl.char, substr(string(message), 0, logLen), cl.toString())
 				err := cl.send(message)
 				if err != nil {
@@ -67,7 +67,7 @@ func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 		}
 	} else { // Room messages
 		for _, cl := range clients.clients {
-			if (cl.room == room || (cl.subscribeOnRoom == room &&  !ms.SelfOnly)) && (uid != cl.uid.String() || ms.SelfSend || ms.SelfOnly) && cl.room != "" {
+			if (cl.room == room || (ms.RoomMessage && !ms.ForRoomOwnerOnly && cl.subscribeOnRoom == room)) && (uid != cl.uid.String() || ms.SelfSend) && cl.room != "" {
 				log.Printf("sending to room %s| %s | %s", cl.room, substr(string(message), 0, logLen), cl.toString())
 				err := cl.send(message)
 				if err != nil {
