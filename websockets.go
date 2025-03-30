@@ -25,6 +25,7 @@ type wsConn struct {
 	char        string
 	isValidChar bool
 	room        string
+	subscribeOnRoom	string
 	uid         uuid.UUID
 	pingTicker  *time.Ticker
 	tickerDone  chan bool

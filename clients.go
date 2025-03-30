@@ -30,6 +30,15 @@ func (c *clientsSlice) Add(w *wsConn) {
 	c.clients = append(c.clients, w)
 }
 
+func (c *clientsSlice) AddRoomSubscribe(uid string,subscribeOnRoom string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, cl := range clients.clients {
+		if cl.uid.String()==uid {cl.subscribeOnRoom=subscribeOnRoom}
+	}
+}
+
+
 func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 	const methodName = "send message"
 
@@ -40,9 +49,14 @@ func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 		log.Printf("%s: unmarshal message getting error %s", methodName, err.Error())
 	}
 
-	if ms.Char != "" {
+	if ms.SubscribeOnRoom!="" {clients.AddRoomSubscribe(uid,ms.SubscribeOnRoom)}
+
+
+	if ms.ForServerOnly {return} // no need to send this message
+
+	if ms.Char != "" { // Char sen messages
 		for _, cl := range clients.clients {
-			if uid != cl.uid.String() && ms.Char == cl.char && (cl.char != "" && cl.isValidChar || ms.SelfSend) {
+			if uid != cl.uid.String() && ms.Char == cl.char && (cl.char != "" && cl.isValidChar || ms.SelfSend || ms.SelfOnly) {
 				log.Printf("sending to char %s| %s | %s", cl.char, substr(string(message), 0, logLen), cl.toString())
 				err := cl.send(message)
 				if err != nil {
@@ -51,9 +65,9 @@ func (c *clientsSlice) SendMessage(room, uid string, message []byte) {
 				}
 			}
 		}
-	} else {
+	} else { // Room messages
 		for _, cl := range clients.clients {
-			if cl.room == room && (uid != cl.uid.String() || ms.SelfSend) && cl.room != "" {
+			if (cl.room == room || (cl.subscribeOnRoom == room &&  !ms.SelfOnly)) && (uid != cl.uid.String() || ms.SelfSend || ms.SelfOnly) && cl.room != "" {
 				log.Printf("sending to room %s| %s | %s", cl.room, substr(string(message), 0, logLen), cl.toString())
 				err := cl.send(message)
 				if err != nil {
