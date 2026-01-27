@@ -150,7 +150,7 @@ func handleAPISend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if room != "" && data != "" {
-		clients.SendMessage(room, "", []byte(data))
+		clients.processMessage(room, "", []byte(data))
 	}
 
 	w.Write([]byte("success"))

@@ -26,6 +26,7 @@ type wsConn struct {
 	isValidChar bool
 	room        string
 	subscribeOnRoom	string
+	isCharViewer bool
 	uid         uuid.UUID
 	pingTicker  *time.Ticker
 	tickerDone  chan bool
@@ -93,7 +94,7 @@ func (c *wsConn) handle() {
 
 		log.Printf("recived | trafic %.1f Mb | total %.1f Mb| %s | %s", msLen, total, substr(string(message), 0, logLen), c.toString())
 
-		clients.SendMessage(c.room, c.uid.String(), message)
+		clients.processMessage(c.room, c.uid.String(), message)
 	}
 }
 
@@ -130,8 +131,10 @@ func (c *wsConn) close() {
 	c.stopPing()
 	clients.Remove(c.uid.String())
 
+	clients.SendSubscribersCount(c.char);
+
 	if err := c.subscribeUnsubscribeMessage(); err != nil {
-		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
+		log.Printf(  "%s: subscribe ping getting error %s", methodName, err.Error())
 	}
 
 	message := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
@@ -161,6 +164,10 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 			System: sys,
 			On:     c.char,
 		}
+
+		clients.SendSubscribersCount(c.char);
+
+
 
 		ms, err := json.Marshal(mess)
 		if err != nil {

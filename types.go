@@ -18,6 +18,7 @@ const (
 	subMessage   = "subscribe"
 	unsubMessage = "unsubscribe"
 	pingMessage  = "ping"
+	roomSubCountMessage="usersInRoom"
 
 	roomParam = "room"
 	dataParam = "data"
@@ -41,4 +42,5 @@ type clientMessage struct {
 	ForRoomOwnerOnly bool `json:"forRoomOwnerOnly"`
 	ForServerOnly bool `json:"forServerOnly"`
 	SubscribeOnRoom string `json:"subscribeOnRoom"`
+	SetViewerMode bool `json:"setViewerMode"`
 }
