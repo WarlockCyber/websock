@@ -53,10 +53,10 @@ func (c *clientsSlice) setViewer(uid string,isViewer bool) {
 }
 
 func (c *clientsSlice) SendSubscribersCount(char string) {
-	if char=="" {return}
+	if char=="" || char=="0" {return}
 	connectsCnt:=clients.countSubscriptions(char)
 	editorsCnt:=clients.countEditors(char)
-	usersCnt:=clients.uniqueSubscribersOnChar(char);
+	usersCnt:=clients.uniqueSubscribersOnChar(char)
 
 	for _, cl :=  range clients.clients {
 		if (cl.char == char) {
