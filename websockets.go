@@ -30,6 +30,7 @@ type wsConn struct {
 	uid         uuid.UUID
 	pingTicker  *time.Ticker
 	tickerDone  chan bool
+	charSaveSubscriptions []string
 }
 
 var md5test = regexp.MustCompile("^[a-f0-9]{32}$")

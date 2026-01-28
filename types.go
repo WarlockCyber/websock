@@ -43,4 +43,6 @@ type clientMessage struct {
 	ForServerOnly bool `json:"forServerOnly"`
 	SubscribeOnRoom string `json:"subscribeOnRoom"`
 	SetViewerMode bool `json:"setViewerMode"`
+	SubscribeOnFile string `json:"SubscribeOnFile"`
+	CharSaved string `json:"charSaved"`
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"slices"
 	"sync"
 	"unsafe"
 )
@@ -52,6 +53,32 @@ func (c *clientsSlice) setViewer(uid string,isViewer bool) {
 	}
 }
 
+func (c *clientsSlice) addFileSubscription(uid string,char string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, cl := range clients.clients {
+		if cl.uid.String()==uid {
+			if !slices.Contains(cl.charSaveSubscriptions,char) {
+				cl.charSaveSubscriptions= append(cl.charSaveSubscriptions,char)
+			}
+			return
+		}
+	}
+}
+
+func (c *clientsSlice) notifyFileSubscribers(char string,message string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, cl := range clients.clients {
+		if slices.Contains(cl.charSaveSubscriptions, char) {
+			cl.send([]byte(message));
+		}
+	}
+}
+
+
+
 func (c *clientsSlice) SendSubscribersCount(char string) {
 	if char=="" || char=="0" {return}
 	connectsCnt:=clients.countSubscriptions(char)
@@ -86,7 +113,13 @@ func (c *clientsSlice) processMessage(room, uid string, message []byte) {
 		clients.setViewer(uid,true)
 	}
 
+	if ms.SubscribeOnFile!="" {
+		clients.addFileSubscription(uid,ms.SubscribeOnFile)
+	}
 
+	if ms.CharSaved!=""{
+		clients.notifyFileSubscribers(ms.CharSaved,fmt.Sprintf("{\"system\":\"charSaved\",\"char\":\"%s\"}",ms.CharSaved));
+	}
 
 	if ms.ForServerOnly {return} // no need to send this message
 
