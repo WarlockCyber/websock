@@ -20,16 +20,16 @@ var total float64
 const logLen = 100
 
 type wsConn struct {
-	mu          sync.Mutex
-	ws          *websocket.Conn
-	char        string
-	isValidChar bool
-	room        string
-	subscribeOnRoom	string
-	isCharViewer bool
-	uid         uuid.UUID
-	pingTicker  *time.Ticker
-	tickerDone  chan bool
+	mu              sync.Mutex
+	ws              *websocket.Conn
+	char            string
+	isValidChar     bool
+	room            string
+	subscribeOnRoom string
+	isCharViewer    bool
+	uid             uuid.UUID
+	pingTicker      *time.Ticker
+	tickerDone      chan bool
 }
 
 var md5test = regexp.MustCompile("^[a-f0-9]{32}$")
@@ -131,10 +131,10 @@ func (c *wsConn) close() {
 	c.stopPing()
 	clients.Remove(c.uid.String())
 
-	clients.SendSubscribersCount(c.char);
+	clients.SendSubscribersCount(c.char)
 
 	if err := c.subscribeUnsubscribeMessage(); err != nil {
-		log.Printf(  "%s: subscribe ping getting error %s", methodName, err.Error())
+		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
 	}
 
 	message := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
@@ -165,9 +165,7 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 			On:     c.char,
 		}
 
-		clients.SendSubscribersCount(c.char);
-
-
+		clients.SendSubscribersCount(c.char)
 
 		ms, err := json.Marshal(mess)
 		if err != nil {

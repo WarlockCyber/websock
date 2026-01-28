@@ -15,10 +15,10 @@ const (
 
 	writeWait = time.Second
 
-	subMessage   = "subscribe"
-	unsubMessage = "unsubscribe"
-	pingMessage  = "ping"
-	roomSubCountMessage="usersInRoom"
+	subMessage          = "subscribe"
+	unsubMessage        = "unsubscribe"
+	pingMessage         = "ping"
+	roomSubCountMessage = "usersInRoom"
 
 	roomParam = "room"
 	dataParam = "data"
@@ -36,11 +36,11 @@ type sysMessage struct {
 }
 
 type clientMessage struct {
-	Char string `json:"char"`
-	SelfSend bool `json:"selfSend"`
-	RoomMessage bool `json:"roomMessage"`
-	ForRoomOwnerOnly bool `json:"forRoomOwnerOnly"`
-	ForServerOnly bool `json:"forServerOnly"`
-	SubscribeOnRoom string `json:"subscribeOnRoom"`
-	SetViewerMode bool `json:"setViewerMode"`
+	Char             string `json:"char"`
+	SelfSend         bool   `json:"selfSend"`
+	RoomMessage      bool   `json:"roomMessage"`
+	ForRoomOwnerOnly bool   `json:"forRoomOwnerOnly"`
+	ForServerOnly    bool   `json:"forServerOnly"`
+	SubscribeOnRoom  string `json:"subscribeOnRoom"`
+	SetViewerMode    bool   `json:"setViewerMode"`
 }
