@@ -137,6 +137,7 @@ func (c *wsConn) close() {
 	const methodName = "connection close"
 
 	c.stopPingPong()
+
 	clients.Remove(c.uid.String())
 
 	clients.SendSubscribersCount(c.char)
@@ -191,9 +192,6 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 }
 
 func (c *wsConn) send(m []byte) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if err := c.ws.WriteMessage(websocket.TextMessage, m); err != nil {
 		c.close()
 
