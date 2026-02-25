@@ -30,7 +30,7 @@ func (c *clientsSlice) Find(uid string) *wsConn {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, cl := range clients.clients {
+	for _, cl := range c.clients {
 		if cl.uid.String() == uid {
 			return cl
 		}
