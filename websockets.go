@@ -192,9 +192,18 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 }
 
 func (c *wsConn) send(m []byte) error {
-	if err := c.ws.WriteMessage(websocket.TextMessage, m); err != nil {
-		c.close()
+	var err error
 
+	c.mu.Lock()
+	defer func() {
+		c.mu.Unlock()
+
+		if err != nil {
+			c.close()
+		}
+	}()
+
+	if err = c.ws.WriteMessage(websocket.TextMessage, m); err != nil {
 		return err
 	}
 

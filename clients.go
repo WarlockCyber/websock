@@ -26,6 +26,19 @@ func newClientsSlice() *clientsSlice {
 	}
 }
 
+func (c *clientsSlice) Find(uid string) *wsConn {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, cl := range clients.clients {
+		if cl.uid.String() == uid {
+			return cl
+		}
+	}
+
+	return nil
+}
+
 func (c *clientsSlice) Add(w *wsConn) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -33,7 +46,24 @@ func (c *clientsSlice) Add(w *wsConn) {
 	c.clients = append(c.clients, w)
 }
 
+func (c *clientsSlice) Remove(uuid string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for n, cl := range c.clients {
+		if cl.uid.String() == uuid {
+			c.clients = append(c.clients[:n], c.clients[n+1:]...)
+			break
+		}
+	}
+}
+
 func (c *clientsSlice) updateRoomSubscribe(uid string, subscribeOnRoom string) {
+	cl := c.Find(uid)
+	if cl == nil {
+		return
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -41,36 +71,31 @@ func (c *clientsSlice) updateRoomSubscribe(uid string, subscribeOnRoom string) {
 	if room == "null" {
 		room = ""
 	}
-	for _, cl := range clients.clients {
-		if cl.uid.String() == uid {
-			cl.subscribeOnRoom = room
-		}
-	}
-}
-func (c *clientsSlice) setViewer(uid string, isViewer bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
-	for _, cl := range clients.clients {
-		if cl.uid.String() == uid {
-			cl.isCharViewer = isViewer
-			clients.SendSubscribersCount(cl.char)
-			return
-		}
+	cl.subscribeOnRoom = room
+}
+
+func (c *clientsSlice) setViewer(uid string, isViewer bool) {
+	cl := c.Find(uid)
+	if cl == nil {
+		return
 	}
+
+	cl.isCharViewer = isViewer
+	clients.SendSubscribersCount(cl.char)
 }
 
 func (c *clientsSlice) addFileSubscription(uid string, char string) {
+	cl := c.Find(uid)
+	if cl == nil {
+		return
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, cl := range clients.clients {
-		if cl.uid.String() == uid {
-			if !slices.Contains(cl.charSaveSubscriptions, char) {
-				cl.charSaveSubscriptions = append(cl.charSaveSubscriptions, char)
-			}
-			return
-		}
+	if !slices.Contains(cl.charSaveSubscriptions, char) {
+		cl.charSaveSubscriptions = append(cl.charSaveSubscriptions, char)
 	}
 }
 
@@ -89,6 +114,7 @@ func (c *clientsSlice) SendSubscribersCount(char string) {
 	if char == "" || char == "0" {
 		return
 	}
+
 	connectsCnt := clients.countSubscriptions(char)
 	editorsCnt := clients.countEditors(char)
 	usersCnt := clients.uniqueSubscribersOnChar(char)
@@ -155,19 +181,10 @@ func (c *clientsSlice) processMessage(room, uid string, message []byte) {
 	}
 }
 
-func (c *clientsSlice) Remove(uuid string) {
+func (c *clientsSlice) byChar(char string) []*wsConn {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for n, cl := range c.clients {
-		if cl.uid.String() == uuid {
-			c.clients = append(c.clients[:n], c.clients[n+1:]...)
-			break
-		}
-	}
-}
-
-func (c *clientsSlice) byChar(char string) []*wsConn {
 	sb := make([]*wsConn, 0)
 	for _, c := range c.clients {
 		if c.char == char {
