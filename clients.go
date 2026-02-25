@@ -29,69 +29,76 @@ func newClientsSlice() *clientsSlice {
 func (c *clientsSlice) Add(w *wsConn) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	c.clients = append(c.clients, w)
 }
 
-func (c *clientsSlice) updateRoomSubscribe(uid string,subscribeOnRoom string) {
+func (c *clientsSlice) updateRoomSubscribe(uid string, subscribeOnRoom string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	room:=subscribeOnRoom;
-	if room=="null" {room=""}
+
+	room := subscribeOnRoom
+	if room == "null" {
+		room = ""
+	}
 	for _, cl := range clients.clients {
-		if cl.uid.String()==uid {cl.subscribeOnRoom=room;}
+		if cl.uid.String() == uid {
+			cl.subscribeOnRoom = room
+		}
 	}
 }
-func (c *clientsSlice) setViewer(uid string,isViewer bool) {
+func (c *clientsSlice) setViewer(uid string, isViewer bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	for _, cl := range clients.clients {
-		if cl.uid.String()==uid {
-			cl.isCharViewer=isViewer;
+		if cl.uid.String() == uid {
+			cl.isCharViewer = isViewer
 			clients.SendSubscribersCount(cl.char)
 			return
 		}
 	}
 }
 
-func (c *clientsSlice) addFileSubscription(uid string,char string) {
+func (c *clientsSlice) addFileSubscription(uid string, char string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	for _, cl := range clients.clients {
-		if cl.uid.String()==uid {
-			if !slices.Contains(cl.charSaveSubscriptions,char) {
-				cl.charSaveSubscriptions= append(cl.charSaveSubscriptions,char)
+		if cl.uid.String() == uid {
+			if !slices.Contains(cl.charSaveSubscriptions, char) {
+				cl.charSaveSubscriptions = append(cl.charSaveSubscriptions, char)
 			}
 			return
 		}
 	}
 }
 
-func (c *clientsSlice) notifyFileSubscribers(char string,message string) {
+func (c *clientsSlice) notifyFileSubscribers(char string, message string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	for _, cl := range clients.clients {
 		if slices.Contains(cl.charSaveSubscriptions, char) {
-			cl.send([]byte(message));
+			cl.send([]byte(message))
 		}
 	}
 }
-
-
 
 func (c *clientsSlice) SendSubscribersCount(char string) {
-	if char=="" || char=="0" {return}
-	connectsCnt:=clients.countSubscriptions(char)
-	editorsCnt:=clients.countEditors(char)
-	usersCnt:=clients.uniqueSubscribersOnChar(char)
+	if char == "" || char == "0" {
+		return
+	}
+	connectsCnt := clients.countSubscriptions(char)
+	editorsCnt := clients.countEditors(char)
+	usersCnt := clients.uniqueSubscribersOnChar(char)
 
-	for _, cl :=  range clients.clients {
-		if (cl.char == char) {
-			cl.send([]byte(fmt.Sprintf(`{"system":"usersInRoom","connects":"%d","editors":"%d","users":"%d"}`,connectsCnt,editorsCnt,usersCnt)))
+	for _, cl := range clients.clients {
+		if cl.char == char {
+			cl.send([]byte(fmt.Sprintf(`{"system":"usersInRoom","connects":"%d","editors":"%d","users":"%d"}`, connectsCnt, editorsCnt, usersCnt)))
 		}
 	}
 }
-
 
 func (c *clientsSlice) processMessage(room, uid string, message []byte) {
 	const methodName = "process message"
@@ -103,25 +110,25 @@ func (c *clientsSlice) processMessage(room, uid string, message []byte) {
 		log.Printf("%s: unmarshal message getting error %s", methodName, err.Error())
 	}
 
-
-
-	if ms.SubscribeOnRoom!="" {
-		clients.updateRoomSubscribe(uid,ms.SubscribeOnRoom)
+	if ms.SubscribeOnRoom != "" {
+		clients.updateRoomSubscribe(uid, ms.SubscribeOnRoom)
 	}
 
 	if ms.SetViewerMode {
-		clients.setViewer(uid,true)
+		clients.setViewer(uid, true)
 	}
 
-	if ms.SubscribeOnFile!="" {
-		clients.addFileSubscription(uid,ms.SubscribeOnFile)
+	if ms.SubscribeOnFile != "" {
+		clients.addFileSubscription(uid, ms.SubscribeOnFile)
 	}
 
-	if ms.CharSaved!=""{
-		clients.notifyFileSubscribers(ms.CharSaved,fmt.Sprintf("{\"system\":\"charSaved\",\"char\":\"%s\"}",ms.CharSaved));
+	if ms.CharSaved != "" {
+		clients.notifyFileSubscribers(ms.CharSaved, fmt.Sprintf("{\"system\":\"charSaved\",\"char\":\"%s\"}", ms.CharSaved))
 	}
 
-	if ms.ForServerOnly {return} // no need to send this message
+	if ms.ForServerOnly {
+		return
+	} // no need to send this message
 
 	if ms.Char != "" { // Char send messages
 		for _, cl := range clients.clients {
@@ -151,6 +158,7 @@ func (c *clientsSlice) processMessage(room, uid string, message []byte) {
 func (c *clientsSlice) Remove(uuid string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	for n, cl := range c.clients {
 		if cl.uid.String() == uuid {
 			c.clients = append(c.clients[:n], c.clients[n+1:]...)
@@ -182,16 +190,15 @@ func (c *clientsSlice) byRoom(room string) []*wsConn {
 }
 
 func (c *clientsSlice) len() int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	return len(c.clients)
 }
 
 func (c *clientsSlice) memory() int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	ln := unsafe.Sizeof(c.clients)
 
@@ -199,9 +206,8 @@ func (c *clientsSlice) memory() int {
 }
 
 func (c *clientsSlice) uniqueRoom() int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	r := make(map[string]bool)
 
@@ -213,55 +219,61 @@ func (c *clientsSlice) uniqueRoom() int {
 }
 
 func (c *clientsSlice) uniqueSubscribersOnChar(char string) int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	r := make(map[string]bool)
 
 	for _, v := range c.clients {
-		if v.char==char {r[v.room] = true}
+		if v.char == char {
+			r[v.room] = true
+		}
 	}
 
 	return len(r)
 }
 
 func (c *clientsSlice) uniqueSubscribersInRoom(room string) int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	r := make(map[string]bool)
 
 	for _, v := range c.clients {
-		if v.room==room || v.subscribeOnRoom==room {r[v.room] = true}
+		if v.room == room || v.subscribeOnRoom == room {
+			r[v.room] = true
+		}
 	}
 
 	return len(r)
 }
 
 func (c *clientsSlice) countSubscriptions(char string) int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
-	var cnt int = 0;
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var cnt int = 0
 
 	for _, v := range c.clients {
-		if v.char==char  {cnt++}
+		if v.char == char {
+			cnt++
+		}
 	}
 
-	return cnt;
+	return cnt
 }
 
 func (c *clientsSlice) countEditors(char string) int {
-	var mu sync.Mutex
-	mu.Lock()
-	defer mu.Unlock()
-	var cnt int = 0;
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var cnt int = 0
 
 	for _, v := range c.clients {
-		if v.char==char && v.isCharViewer==false  {cnt++}
+		if v.char == char && v.isCharViewer == false {
+			cnt++
+		}
 	}
 
-	return cnt;
+	return cnt
 }

@@ -20,16 +20,16 @@ var total float64
 const logLen = 100
 
 type wsConn struct {
-	mu          sync.Mutex
-	ws          *websocket.Conn
-	char        string
-	isValidChar bool
-	room        string
-	subscribeOnRoom	string
-	isCharViewer bool
-	uid         uuid.UUID
-	pingTicker  *time.Ticker
-	tickerDone  chan bool
+	mu                    sync.Mutex
+	ws                    *websocket.Conn
+	char                  string
+	isValidChar           bool
+	room                  string
+	subscribeOnRoom       string
+	isCharViewer          bool
+	uid                   uuid.UUID
+	pingTicker            *time.Ticker
+	tickerDone            chan bool
 	charSaveSubscriptions []string
 }
 
@@ -69,7 +69,7 @@ func (c *wsConn) handle() {
 		c.close()
 	}()
 
-	err := c.initPing()
+	err := c.initPingPong()
 	if err != nil {
 		log.Printf("%s: init ping getting error %s", methodName, err.Error())
 		return
@@ -99,7 +99,7 @@ func (c *wsConn) handle() {
 	}
 }
 
-func (c *wsConn) initPing() error {
+func (c *wsConn) initPingPong() error {
 	pingMess := &sysMessage{
 		System: pingMessage,
 	}
@@ -107,6 +107,13 @@ func (c *wsConn) initPing() error {
 	if err != nil {
 		return err
 	}
+
+	c.ws.SetReadDeadline(time.Now().Add(time.Duration(cfg.PingTimeout) * time.Second))
+	c.ws.SetPongHandler(func(_ string) error {
+		c.ws.SetReadDeadline(time.Now().Add(time.Duration(cfg.PingTimeout) * time.Second))
+
+		return nil
+	})
 
 	go func() {
 		for {
@@ -122,26 +129,23 @@ func (c *wsConn) initPing() error {
 	return nil
 }
 
-func (c *wsConn) stopPing() {
+func (c *wsConn) stopPingPong() {
 	c.tickerDone <- true
 }
 
 func (c *wsConn) close() {
 	const methodName = "connection close"
 
-	c.stopPing()
+	c.stopPingPong()
 	clients.Remove(c.uid.String())
 
-	clients.SendSubscribersCount(c.char);
+	clients.SendSubscribersCount(c.char)
 
 	if err := c.subscribeUnsubscribeMessage(); err != nil {
-		log.Printf(  "%s: subscribe ping getting error %s", methodName, err.Error())
+		log.Printf("%s: subscribe ping getting error %s", methodName, err.Error())
 	}
 
 	message := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	c.ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
 
@@ -166,9 +170,7 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 			On:     c.char,
 		}
 
-		clients.SendSubscribersCount(c.char);
-
-
+		clients.SendSubscribersCount(c.char)
 
 		ms, err := json.Marshal(mess)
 		if err != nil {
@@ -191,7 +193,14 @@ func (c *wsConn) subscribeUnsubscribeMessage() error {
 func (c *wsConn) send(m []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.ws.WriteMessage(websocket.TextMessage, m)
+
+	if err := c.ws.WriteMessage(websocket.TextMessage, m); err != nil {
+		c.close()
+
+		return err
+	}
+
+	return nil
 }
 
 func (c *wsConn) toString() string {
