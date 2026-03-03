@@ -15,10 +15,10 @@ const (
 
 	writeWait = time.Second
 
-	subMessage   = "subscribe"
-	unsubMessage = "unsubscribe"
-	pingMessage  = "ping"
-	roomSubCountMessage="usersInRoom"
+	subMessage          = "subscribe"
+	unsubMessage        = "unsubscribe"
+	pingMessage         = "ping"
+	roomSubCountMessage = "usersInRoom"
 
 	roomParam = "room"
 	dataParam = "data"
@@ -27,7 +27,7 @@ const (
 const (
 	defReadSize    = 1024
 	defWriteSize   = 1024
-	defPingTimeout = 60
+	defPingTimeout = 60 * 30
 )
 
 type sysMessage struct {
@@ -36,13 +36,13 @@ type sysMessage struct {
 }
 
 type clientMessage struct {
-	Char string `json:"char"`
-	SelfSend bool `json:"selfSend"`
-	RoomMessage bool `json:"roomMessage"`
-	ForRoomOwnerOnly bool `json:"forRoomOwnerOnly"`
-	ForServerOnly bool `json:"forServerOnly"`
-	SubscribeOnRoom string `json:"subscribeOnRoom"`
-	SetViewerMode bool `json:"setViewerMode"`
-	SubscribeOnFile string `json:"SubscribeOnFile"`
-	CharSaved string `json:"charSaved"`
+	Char             string `json:"char"`
+	SelfSend         bool   `json:"selfSend"`
+	RoomMessage      bool   `json:"roomMessage"`
+	ForRoomOwnerOnly bool   `json:"forRoomOwnerOnly"`
+	ForServerOnly    bool   `json:"forServerOnly"`
+	SubscribeOnRoom  string `json:"subscribeOnRoom"`
+	SetViewerMode    bool   `json:"setViewerMode"`
+	SubscribeOnFile  string `json:"SubscribeOnFile"`
+	CharSaved        string `json:"charSaved"`
 }
